@@ -19,10 +19,10 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Pull AstraChat image
-        run: docker pull astraonline/astrachat:v4.15.1-0.0.1
+        run: docker pull astraonline/astrachat:v4.18.0-0.0.5
 
       - name: Tag image for atendimentoET
-        run: docker tag astraonline/astrachat:v4.15.1-0.0.1 ghcr.io/apemerson/atendimentoet:v4.15.1-0.0.1
+        run: docker tag astraonline/astrachat:v4.18.0-0.0.5 ghcr.io/apemerson/atendimentoet:v4.18.0-0.0.5
 
       - name: Push image to atendimentoET
-        run: docker push ghcr.io/apemerson/atendimentoet:v4.15.1-0.0.1
+        run: docker push ghcr.io/apemerson/atendimentoet:v4.18.0-0.0.5
