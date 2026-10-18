@@ -1,6 +1,6 @@
 services:
   chatwoot:
-    image: ghcr.io/apemerson/astrachat:v4.15.1-0.0.1
+    image: ghcr.io/apemerson/atendimentoet:v4.15.1-0.0.1
     entrypoint: docker/entrypoints/rails.sh
     command: >
       sh -c "echo 'Rails.application.config.active_storage.variant_processor = :mini_magick' > /app/config/initializers/active_storage.rb && bundle exec rails db:chatwoot_prepare && bundle exec rails s -p 3000 -b 0.0.0.0"
@@ -38,13 +38,12 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    expose:
-      - "3000"
-    restart: unless-stopped
+    networks:
+      - internal
+    restart: always
 
   sidekiq:
-    image: ghcr.io/apemerson/astrachat:v4.15.1-0.0.1
-    entrypoint: docker/entrypoints/rails.sh
+    image: ghcr.io/apemerson/atendimentoet:v4.15.1-0.0.1
     command: bundle exec sidekiq -C config/sidekiq.yml
     environment: *chatwoot-env
     volumes:
@@ -54,15 +53,16 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    restart: unless-stopped
+    networks:
+      - internal
+    restart: always
 
   postgres:
     image: pgvector/pgvector:pg16
     environment:
+      POSTGRES_DB: chatwoot
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ${SERVICE_PASSWORD_64_DB}
-      POSTGRES_DB: chatwoot
-      TZ: America/Sao_Paulo
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -70,11 +70,13 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
-    restart: unless-stopped
+    networks:
+      - internal
+    restart: always
 
   redis:
     image: redis:7-alpine
-    command: ["redis-server", "--appendonly", "yes"]
+    command: redis-server --appendonly yes
     volumes:
       - redis_data:/data
     healthcheck:
@@ -82,9 +84,15 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
-    restart: unless-stopped
+    networks:
+      - internal
+    restart: always
 
 volumes:
   chatwoot_storage:
   postgres_data:
   redis_data:
+
+networks:
+  internal:
+    driver: bridge
