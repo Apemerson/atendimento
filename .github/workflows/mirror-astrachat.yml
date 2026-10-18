@@ -1,4 +1,4 @@
-name: Mirror AstraChat image to GHCR
+name: Mirror AstraChat image to atendimentoET
 
 on:
   workflow_dispatch:
@@ -21,8 +21,8 @@ jobs:
       - name: Pull AstraChat image
         run: docker pull astraonline/astrachat:v4.15.1-0.0.1
 
-      - name: Tag image for this account
-        run: docker tag astraonline/astrachat:v4.15.1-0.0.1 ghcr.io/apemerson/astrachat:v4.15.1-0.0.1
+      - name: Tag image for atendimentoET
+        run: docker tag astraonline/astrachat:v4.15.1-0.0.1 ghcr.io/apemerson/atendimentoet:v4.15.1-0.0.1
 
-      - name: Push owned mirror
-        run: docker push ghcr.io/apemerson/astrachat:v4.15.1-0.0.1
+      - name: Push image to atendimentoET
+        run: docker push ghcr.io/apemerson/atendimentoet:v4.15.1-0.0.1
