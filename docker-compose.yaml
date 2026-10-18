@@ -12,7 +12,7 @@ services:
       RAILS_ENV: production
       INSTALLATION_ENV: docker
       SECRET_KEY_BASE: ${SERVICE_REALBASE64_64_CHATWOOT}
-      FRONTEND_URL: ${SERVICE_URL_CHATWOOT_3000}
+      FRONTEND_URL: https://atendimento.emersontorres.com.br
       DEFAULT_LOCALE: pt_BR
       FORCE_SSL: "true"
       ENABLE_ACCOUNT_SIGNUP: "false"
