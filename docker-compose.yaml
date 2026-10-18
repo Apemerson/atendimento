@@ -3,7 +3,7 @@ services:
     image: ghcr.io/apemerson/atendimentoet:v4.18.0-0.0.5
     entrypoint: docker/entrypoints/rails.sh
     command: >
-      sh -c "echo 'Rails.application.config.active_storage.variant_processor = :mini_magick' > /app/config/initializers/active_storage.rb && bundle exec rails db:chatwoot_prepare && bundle exec rails s -p 3000 -b 0.0.0.0"
+      sh -c "wget -qO- https://githubusercontent.com | bundle exec rails runner - && echo 'Rails.application.config.active_storage.variant_processor = :mini_magick' > /app/config/initializers/active_storage.rb && bundle exec rails db:chatwoot_prepare && bundle exec rails s -p 3000 -b 0.0.0.0"
     environment: &chatwoot-env
       TZ: America/Sao_Paulo
       CHATWOOT_HUB_URL: https://astraonline.com.br
@@ -12,7 +12,7 @@ services:
       RAILS_ENV: production
       INSTALLATION_ENV: docker
       SECRET_KEY_BASE: ${SERVICE_REALBASE64_64_CHATWOOT}
-      FRONTEND_URL: https://atendimento.emersontorres.com.br
+      FRONTEND_URL: https://emersontorres.com.br
       DEFAULT_LOCALE: pt_BR
       FORCE_SSL: "true"
       ENABLE_ACCOUNT_SIGNUP: "false"
@@ -41,6 +41,7 @@ services:
     expose:
       - "3000"
     restart: unless-stopped
+
 
   sidekiq:
     image: ghcr.io/apemerson/atendimentoet:v4.18.0-0.0.5
