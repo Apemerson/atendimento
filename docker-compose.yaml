@@ -1,0 +1,90 @@
+services:
+  chatwoot:
+    image: ghcr.io/apemerson/astrachat:v4.15.1-0.0.1
+    entrypoint: docker/entrypoints/rails.sh
+    command: >
+      sh -c "echo 'Rails.application.config.active_storage.variant_processor = :mini_magick' > /app/config/initializers/active_storage.rb && bundle exec rails db:chatwoot_prepare && bundle exec rails s -p 3000 -b 0.0.0.0"
+    environment: &chatwoot-env
+      TZ: America/Sao_Paulo
+      CHATWOOT_HUB_URL: https://astraonline.com.br
+      INSTALLATION_NAME: atendimentoET
+      NODE_ENV: production
+      RAILS_ENV: production
+      INSTALLATION_ENV: docker
+      SECRET_KEY_BASE: ${SERVICE_REALBASE64_64_CHATWOOT}
+      FRONTEND_URL: ${SERVICE_URL_CHATWOOT_3000}
+      DEFAULT_LOCALE: pt_BR
+      FORCE_SSL: "true"
+      ENABLE_ACCOUNT_SIGNUP: "false"
+      REDIS_URL: redis://redis:6379
+      POSTGRES_HOST: postgres
+      POSTGRES_USERNAME: postgres
+      POSTGRES_PASSWORD: ${SERVICE_PASSWORD_64_DB}
+      POSTGRES_DATABASE: chatwoot
+      RAILS_LOG_TO_STDOUT: "true"
+      USE_INBOX_AVATAR_FOR_BOT: "true"
+      SIDEKIQ_CONCURRENCY: "10"
+      RACK_TIMEOUT_SERVICE_TIMEOUT: "0"
+      RAILS_MAX_THREADS: "5"
+      WEB_CONCURRENCY: "2"
+      ENABLE_RACK_ATTACK: "false"
+      WEBHOOKS_TRIGGER_TIMEOUT: "10"
+      DB_POOL: "25"
+      ACTIVE_STORAGE_SERVICE: local
+    volumes:
+      - chatwoot_storage:/app/storage
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    expose:
+      - "3000"
+    restart: unless-stopped
+
+  sidekiq:
+    image: ghcr.io/apemerson/astrachat:v4.15.1-0.0.1
+    entrypoint: docker/entrypoints/rails.sh
+    command: bundle exec sidekiq -C config/sidekiq.yml
+    environment: *chatwoot-env
+    volumes:
+      - chatwoot_storage:/app/storage
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${SERVICE_PASSWORD_64_DB}
+      POSTGRES_DB: chatwoot
+      TZ: America/Sao_Paulo
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d chatwoot"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  chatwoot_storage:
+  postgres_data:
+  redis_data:
