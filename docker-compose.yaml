@@ -43,6 +43,26 @@ services:
     expose:
       - "3000"
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "ruby", "-rnet/http", "-e", "exit(Net::HTTP.get_response(URI(\'http://localhost:3000/\')).code.to_i == 200 ? 0 : 1)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
+
+  sidekiq:
+    image: ghcr.io/apemerson/atendimentoet:v4.18.0-0.0.5
+    entrypoint: docker/entrypoints/rails.sh
+    command: bundle exec sidekiq -C config/sidekiq.yml
+    environment: *chatwoot-env
+    volumes:
+      - chatwoot_storage:/app/storage
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
 
   postgres:
     image: pgvector/pgvector:pg16
