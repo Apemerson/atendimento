@@ -44,7 +44,7 @@ services:
       - "3000"
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "ruby", "-rnet/http", "-e", "exit(Net::HTTP.get_response(URI(\'http://localhost:3000/\')).code.to_i == 200 ? 0 : 1)"]
+      test: ["CMD", "ruby", "-rnet/http", "-e", "exit(Net::HTTP.get_response(URI.parse(%q{http://localhost:3000/})).code.to_i == 200 ? 0 : 1)"]
       interval: 30s
       timeout: 10s
       retries: 3
