@@ -959,9 +959,38 @@ class Kanban::ProviderWebhooksController < ActionController::API
     content = data[:text].to_s.strip
     content = '[mídia/mensagem não suportada nesta conexão]' if content.blank?
 
+    # A WAHA devolve `fromMe` também para mensagens que acabaram de sair do
+    # Chatwoot. O envio já criou uma mensagem com remetente (agente); o eco chega
+    # com outro formato de ID e, sem esta reconciliação, virava uma segunda bolha
+    # sem remetente (robô). Mensagens enviadas diretamente pelo celular continuam
+    # sendo registradas quando não há uma saída equivalente recente do Chatwoot.
+    return if reconcile_waha_outgoing_echo(inst, conversation, data, content)
+
     Messages::MessageBuilder.new(nil, conversation, {
                                    content: content, message_type: 'outgoing', source_id: data[:message_id]
                                  }).perform
+  end
+
+  def reconcile_waha_outgoing_echo(inst, conversation, data, content)
+    return false unless inst.provider == 'waha' && data[:message_id].present?
+
+    echo_id = data[:message_id].to_s
+    return true if conversation.messages.where("content_attributes ->> 'waha_echo_source_id' = ?", echo_id).exists?
+
+    chatwoot_message = conversation.messages
+                                   .where(message_type: :outgoing, content: content)
+                                   .where.not(sender_id: nil)
+                                   .where.not(source_id: [nil, ''])
+                                   .where(created_at: 30.seconds.ago..Time.current)
+                                   .order(created_at: :desc)
+                                   .first
+    return false unless chatwoot_message
+
+    chatwoot_message.update!(
+      content_attributes: chatwoot_message.content_attributes.to_h.merge('waha_echo_source_id' => echo_id)
+    )
+    Rails.logger.info("[Kanban::ProviderWebhook] WAHA outgoing echo reconciled message_id=#{echo_id}")
+    true
   end
 
   # Mensagem de GRUPO (UazAPI): cria/reusa a conversa do GRUPO (source_id = JID),

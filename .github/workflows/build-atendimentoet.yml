@@ -49,5 +49,5 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          push: ${{ github.ref == 'refs/heads/main' }}
-          tags: ghcr.io/apemerson/atendimentoet:v4.18.0-0.0.6
+          push: ${{ github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main' }}
+          tags: ghcr.io/apemerson/atendimentoet:v4.18.0-0.0.7
