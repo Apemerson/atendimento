@@ -43,6 +43,9 @@ services:
     expose:
       - "3000"
     restart: unless-stopped
+    networks:
+      - default
+      - coolify
     healthcheck:
       test: ["CMD", "ruby", "-rnet/http", "-e", "code = Net::HTTP.get_response(URI.parse(%q{http://localhost:3000/})).code.to_i; exit(code >= 200 && code < 400 ? 0 : 1)"]
       interval: 30s
@@ -63,6 +66,9 @@ services:
       redis:
         condition: service_healthy
     restart: unless-stopped
+    networks:
+      - default
+      - coolify
 
   postgres:
     image: pgvector/pgvector:pg16
@@ -96,3 +102,9 @@ volumes:
   chatwoot_storage:
   postgres_data:
   redis_data:
+
+networks:
+  default:
+  coolify:
+    external: true
+    name: coolify
