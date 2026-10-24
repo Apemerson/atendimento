@@ -977,13 +977,26 @@ class Kanban::ProviderWebhooksController < ActionController::API
     echo_id = data[:message_id].to_s
     return true if conversation.messages.where("content_attributes ->> 'waha_echo_source_id' = ?", echo_id).exists?
 
-    chatwoot_message = conversation.messages
-                                   .where(message_type: :outgoing, content: content)
-                                   .where.not(sender_id: nil)
-                                   .where.not(source_id: [nil, ''])
-                                   .where(created_at: 30.seconds.ago..Time.current)
-                                   .order(created_at: :desc)
-                                   .first
+    # O ProviderSendJob só grava source_id depois que a WAHA responde. O echo
+    # pode chegar nesse intervalo, então exigir source_id aqui deixa passar a
+    # segunda bolha. Primeiro priorizamos uma saída ainda sem confirmação do
+    # provedor; depois aceitamos uma saída recém-confirmada, cobrindo a corrida
+    # em que o job termina antes do webhook.
+    recent_messages = conversation.messages
+                                  .where(message_type: :outgoing, content: content)
+                                  .where.not(sender_id: nil)
+
+    chatwoot_message = recent_messages
+                       .where(source_id: [nil, ''])
+                       .where(created_at: 15.seconds.ago..Time.current)
+                       .order(created_at: :desc)
+                       .first
+
+    chatwoot_message ||= recent_messages
+                         .where.not(source_id: [nil, ''])
+                         .where(created_at: 3.seconds.ago..Time.current)
+                         .order(created_at: :desc)
+                         .first
     return false unless chatwoot_message
 
     chatwoot_message.update!(

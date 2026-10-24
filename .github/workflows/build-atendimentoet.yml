@@ -50,4 +50,4 @@ jobs:
         with:
           context: .
           push: ${{ github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main' }}
-          tags: ghcr.io/apemerson/atendimentoet:v4.18.0-0.0.7
+          tags: ghcr.io/apemerson/atendimentoet:v4.18.0-0.0.8

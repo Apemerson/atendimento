@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   chatwoot:
-    image: ghcr.io/apemerson/atendimentoet:v4.18.0-0.0.7
+    image: ghcr.io/apemerson/atendimentoet:v4.18.0-0.0.8
     entrypoint: docker/entrypoints/rails.sh
     command: >
       sh -c "bundle exec rails db:chatwoot_prepare && bundle exec rails s -p 3000 -b 0.0.0.0"
@@ -51,7 +51,7 @@ services:
       start_period: 120s
 
   sidekiq:
-    image: ghcr.io/apemerson/atendimentoet:v4.18.0-0.0.7
+    image: ghcr.io/apemerson/atendimentoet:v4.18.0-0.0.8
     entrypoint: docker/entrypoints/rails.sh
     command: bundle exec sidekiq -C config/sidekiq.yml
     environment: *chatwoot-env
