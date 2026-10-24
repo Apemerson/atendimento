@@ -1,6 +1,12 @@
 name: Build atendimentoET image
 
 on:
+  pull_request:
+    branches: [main]
+    paths:
+      - Dockerfile
+      - app/controllers/kanban/provider_webhooks_controller.rb
+      - .github/workflows/build-atendimentoet.yml
   push:
     branches: [main]
     paths:
@@ -30,9 +36,18 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Check Ruby syntax against the pinned base image
+        run: |
+          docker run --rm \
+            --volume "$PWD:/workspace" \
+            --workdir /workspace \
+            --entrypoint ruby \
+            ghcr.io/apemerson/atendimentoet:v4.18.0-0.0.5 \
+            -c app/controllers/kanban/provider_webhooks_controller.rb
+
       - name: Build and push overlay image
         uses: docker/build-push-action@v6
         with:
           context: .
-          push: true
+          push: ${{ github.ref == 'refs/heads/main' }}
           tags: ghcr.io/apemerson/atendimentoet:v4.18.0-0.0.6
