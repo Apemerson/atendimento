@@ -35,6 +35,9 @@ services:
       ACTIVE_STORAGE_SERVICE: local
     volumes:
       - chatwoot_storage:/app/storage
+    networks:
+      - default
+      - coolify
     depends_on:
       postgres:
         condition: service_healthy
@@ -57,6 +60,9 @@ services:
     environment: *chatwoot-env
     volumes:
       - chatwoot_storage:/app/storage
+    networks:
+      - default
+      - coolify
     depends_on:
       postgres:
         condition: service_healthy
@@ -96,4 +102,9 @@ volumes:
   chatwoot_storage:
   postgres_data:
   redis_data:
+
+networks:
+  coolify:
+    external: true
+    name: coolify
 
