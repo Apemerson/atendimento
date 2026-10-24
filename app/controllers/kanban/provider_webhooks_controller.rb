@@ -29,6 +29,15 @@ class Kanban::ProviderWebhooksController < ActionController::API
 
     payload = params.to_unsafe_h
 
+    # A Evolution também envia a atualização do status da mensagem separada do
+    # evento de criação (messages.upsert). Sem tratar messages.update, o Chatwoot
+    # registra o envio como aceito, mas nunca recebe o recibo DELIVERY_ACK/READ e
+    # o tique azul não aparece. O evento é terminal aqui para não tentar parseá-lo
+    # como uma nova mensagem.
+    if inst.provider == 'evolution' && handle_evolution_message_status(inst, payload)
+      return head :ok
+    end
+
     # Reação (Evolution/WAHA): esses provedores mandam um webhook secundário só p/
     # eventos de reação; casamos por source_id e gravamos content_attributes.reactions.
     rx = extract_provider_reaction(inst, payload)
@@ -406,6 +415,45 @@ class Kanban::ProviderWebhooksController < ActionController::API
     case type.to_s.strip.downcase
     when '', 'delivery', 'delivered' then 'delivered'
     when 'read', 'played' then 'read'
+    end
+  end
+
+  # A Evolution envia recibos de mensagem em `messages.update`, com um ou mais
+  # itens { key: { id, fromMe }, update: { status } }. Só atualizamos mensagens de
+  # saída desta caixa: recibos de entrada não são o status das respostas do agente.
+  def handle_evolution_message_status(inst, payload)
+    event = payload['event'].to_s.downcase.tr('_', '.')
+    return false unless event == 'messages.update'
+
+    Array.wrap(payload['data']).each do |item|
+      next unless item.is_a?(Hash)
+
+      key = item['key'].is_a?(Hash) ? item['key'] : {}
+      next unless ActiveModel::Type::Boolean.new.cast(key['fromMe'])
+
+      source_id = key['id'].to_s.strip
+      next if source_id.blank?
+
+      status = evolution_message_status(item.dig('update', 'status') || item['status'])
+      next if status.nil?
+
+      msg = find_message_by_source(inst.inbox_id, source_id)
+      next if msg.nil? || !msg.outgoing?
+
+      Messages::StatusUpdateService.new(msg, status).perform
+    end
+    true
+  rescue StandardError => e
+    Rails.logger.warn("[Kanban::ProviderWebhook] evolution message status: #{e.class} #{e.message}")
+    true
+  end
+
+  # Baileys/Evolution: SERVER_ACK=2, DELIVERY_ACK=3, READ=4, PLAYED=5.
+  # Eventos podem vir tanto com o nome como com o enum numérico.
+  def evolution_message_status(value)
+    case value.to_s.strip.upcase
+    when '3', 'DELIVERY_ACK', 'DELIVERED' then 'delivered'
+    when '4', '5', 'READ', 'PLAYED' then 'read'
     end
   end
 
@@ -813,9 +861,24 @@ class Kanban::ProviderWebhooksController < ActionController::API
     key = d['key'] || {}
     msg = d['message'] || {}
     text = msg['conversation'] || msg.dig('extendedTextMessage', 'text')
+    chat_jid = key['remoteJid'].to_s
+    is_group = chat_jid.end_with?('@g.us')
+    # Evolution group events use the group's JID as remoteJid. Treating its
+    # numeric prefix as a phone number fails Chatwoot's E.164 validation. Keep
+    # the group JID as the conversation identity and let the existing group
+    # handler create/reuse the group conversation.
+    resolved_chat_jid = if chat_jid.end_with?('@lid')
+                          key['remoteJidAlt'].presence || d['remoteJidAlt'].presence || chat_jid
+                        else
+                          chat_jid
+                        end
     {
-      phone: key['remoteJid'].to_s.split('@').first.to_s.gsub(/\D/, ''),
-      name: d['pushName'], text: text, message_id: key['id'], from_me: key['fromMe'] == true
+      phone: is_group ? nil : jid_phone(resolved_chat_jid),
+      name: d['pushName'], text: text, message_id: key['id'], from_me: key['fromMe'] == true,
+      is_group: is_group,
+      group_jid: is_group ? chat_jid : nil,
+      group_name: is_group ? (d['subject'].presence || d['groupName'].presence || d['chatName'].presence) : nil,
+      sender_name: is_group ? d['pushName'] : nil
     }
   end
 
