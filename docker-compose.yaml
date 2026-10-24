@@ -18,7 +18,7 @@ services:
       DEFAULT_LOCALE: pt_BR
       FORCE_SSL: "true"
       ENABLE_ACCOUNT_SIGNUP: "false"
-      REDIS_URL: redis://redis:6379
+      REDIS_URL: redis://et-connect-redis:6379
       POSTGRES_HOST: et-connect-postgres
       POSTGRES_USERNAME: postgres
       POSTGRES_PASSWORD: ${SERVICE_PASSWORD_64_DB}
@@ -95,6 +95,10 @@ services:
     command: ["redis-server", "--appendonly", "yes"]
     volumes:
       - redis_data:/data
+    networks:
+      default:
+        aliases:
+          - et-connect-redis
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
