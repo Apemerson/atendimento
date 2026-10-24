@@ -19,7 +19,7 @@ services:
       FORCE_SSL: "true"
       ENABLE_ACCOUNT_SIGNUP: "false"
       REDIS_URL: redis://redis:6379
-      POSTGRES_HOST: postgres
+      POSTGRES_HOST: et-connect-postgres
       POSTGRES_USERNAME: postgres
       POSTGRES_PASSWORD: ${SERVICE_PASSWORD_64_DB}
       POSTGRES_DATABASE: chatwoot
@@ -79,6 +79,10 @@ services:
       TZ: America/Sao_Paulo
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      default:
+        aliases:
+          - et-connect-postgres
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d chatwoot"]
       interval: 10s
@@ -104,6 +108,7 @@ volumes:
   redis_data:
 
 networks:
+  default: {}
   coolify:
     external: true
     name: coolify
