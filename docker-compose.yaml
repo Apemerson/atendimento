@@ -88,7 +88,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
-    restart: stopped
+    restart: unless-stopped
 
   redis:
     image: redis:7-alpine
