@@ -5,14 +5,19 @@ services:
     image: ghcr.io/apemerson/atendimentoet:v4.19.0-0.0.2
     entrypoint: docker/entrypoints/rails.sh
     command: >
-      sh -c "echo 'Rails.application.config.active_storage.variant_processor = :mini_magick' > /app/config/initializers/active_storage.rb && bundle exec rails db:chatwoot_prepare && bundle exec rails s -p 3000 -b 0.0.0.0"
-    # --- BLOQUEIO COMPLEMENTAR DE COMUNICAÇÃO DO HUB ---
+      sh -c "bundle exec rails runner '
+      p = InstallationConfig.find_or_initialize_by(name: \"INSTALLATION_PRICING_PLAN\"); p.serialized_value = \"enterprise\".to_json; p.save!;
+      q = InstallationConfig.find_or_initialize_by(name: \"INSTALLATION_PRICING_PLAN_QUANTITY\"); q.serialized_value = 9999999.to_json; q.save!;
+      Account.find_each { |a| a.enable_features! }; Redis.new(url: ENV[\"REDIS_URL\"]).flushall' &&
+      echo 'Rails.application.config.active_storage.variant_processor = :mini_magick' > /app/config/initializers/active_storage.rb &&
+      bundle exec rails db:chatwoot_prepare &&
+      bundle exec rails s -p 3000 -b 0.0.0.0"
     extra_hosts:
-      - "://chatwoot.com.0.0.1"
-      - "astraonline.com.br:127.0.0.1"
+      ://chatwoot.com: "127.0.0.1"
+      astraonline.com.br: "127.0.0.1"
     environment: &chatwoot-env
       TZ: America/Sao_Paulo
-      CHATWOOT_HUB_URL: https://chatwoot.com
+      CHATWOOT_HUB_URL: https://://chatwoot.com
       INSTALLATION_NAME: atendimentoET
       NODE_ENV: production
       RAILS_ENV: production
@@ -62,8 +67,8 @@ services:
     entrypoint: docker/entrypoints/rails.sh
     command: bundle exec sidekiq -C config/sidekiq.yml
     extra_hosts:
-      - "://chatwoot.com.0.0.1"
-      - "astraonline.com.br:127.0.0.1"
+      ://chatwoot.com: "127.0.0.1"
+      astraonline.com.br: "127.0.0.1"
     environment: *chatwoot-env
     volumes:
       - chatwoot_storage:/app/storage
