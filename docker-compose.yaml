@@ -5,14 +5,7 @@ services:
     image: ghcr.io/apemerson/atendimentoet:v4.19.0-0.0.2
     entrypoint: docker/entrypoints/rails.sh
     command: >
-      sh -c "bundle exec rails runner '
-      File.write(\"config/initializers/force_enterprise.rb\", \"require \\\"kanban/license\\\"; module Kanban; class License; def plan; \\\"enterprise\\\"; end; def product_tier; \\\"enterprise\\\"; end; def valid?; true; end; def quantity; 9999999; end; end; end; module ChatwootHub; def self.pricing_plan; \\\"enterprise\\\"; end; def self.pricing_plan_quantity; 9999999; end; end\");
-      p = InstallationConfig.find_or_initialize_by(name: \"INSTALLATION_PRICING_PLAN\"); p.value = \"enterprise\"; p.save!;
-      q = InstallationConfig.find_or_initialize_by(name: \"INSTALLATION_PRICING_PLAN_QUANTITY\"); q.value = \"9999999\"; q.save!;
-      Account.find_each { |a| a.enable_features! }' && 
-      echo 'Rails.application.config.active_storage.variant_processor = :mini_magick' > /app/config/initializers/active_storage.rb && 
-      bundle exec rails db:chatwoot_prepare && 
-      bundle exec rails s -p 3000 -b 0.0.0.0"
+      sh -c "echo 'Rails.application.config.active_storage.variant_processor = :mini_magick' > /app/config/initializers/active_storage.rb && bundle exec rails db:chatwoot_prepare && bundle exec rails s -p 3000 -b 0.0.0.0"
     environment: &chatwoot-env
       TZ: America/Sao_Paulo
       CHATWOOT_HUB_URL: https://astraonline.com.br
@@ -40,6 +33,11 @@ services:
       WEBHOOKS_TRIGGER_TIMEOUT: "10"
       DB_POOL: "25"
       ACTIVE_STORAGE_SERVICE: local
+      # --- VARIÁVEIS DE FORÇAMENTO ENTERPRISE ---
+      DISABLE_ENTERPRISE: "false"
+      INSTALLATION_PRICING_PLAN: enterprise
+      INSTALLATION_PRICING_PLAN_QUANTITY: "9999999"
+      ENTERPRISE_NUMBER_OF_AGENTS: "9999999"
     volumes:
       - chatwoot_storage:/app/storage
     networks:
@@ -63,9 +61,7 @@ services:
   sidekiq:
     image: ghcr.io/apemerson/atendimentoet:v4.19.0-0.0.2
     entrypoint: docker/entrypoints/rails.sh
-    command: >
-      sh -c "bundle exec rails runner 'File.write(\"config/initializers/force_enterprise.rb\", \"require \\\"kanban/license\\\"; module Kanban; class License; def plan; \\\"enterprise\\\"; end; def product_tier; \\\"enterprise\\\"; end; def valid?; true; end; def quantity; 9999999; end; end; end; module ChatwootHub; def self.pricing_plan; \\\"enterprise\\\"; end; def self.pricing_plan_quantity; 9999999; end; end\")' && 
-      bundle exec sidekiq -C config/sidekiq.yml"
+    command: bundle exec sidekiq -C config/sidekiq.yml
     environment: *chatwoot-env
     volumes:
       - chatwoot_storage:/app/storage
