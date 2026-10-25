@@ -6,12 +6,9 @@ services:
     entrypoint: docker/entrypoints/rails.sh
     command: >
       sh -c "echo 'Rails.application.config.active_storage.variant_processor = :mini_magick' > /app/config/initializers/active_storage.rb && bundle exec rails db:chatwoot_prepare && bundle exec rails s -p 3000 -b 0.0.0.0"
-    extra_hosts:
-      ://chatwoot.com: "127.0.0.1"
-      astraonline.com.br: "127.0.0.1"
     environment: &chatwoot-env
       TZ: America/Sao_Paulo
-      CHATWOOT_HUB_URL: https://://chatwoot.com
+      CHATWOOT_HUB_URL: https://astraonline.com.br
       INSTALLATION_NAME: atendimentoET
       NODE_ENV: production
       RAILS_ENV: production
@@ -49,20 +46,11 @@ services:
     expose:
       - "3000"
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "ruby", "-rnet/http", "-e", "code = Net::HTTP.get_response(URI.parse(%q{http://localhost:3000/})).code.to_i; exit(code >= 200 && code < 400 ? 0 : 1)"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 120s
 
   sidekiq:
     image: ghcr.io/apemerson/atendimentoet:v4.19.0-0.0.2
     entrypoint: docker/entrypoints/rails.sh
     command: bundle exec sidekiq -C config/sidekiq.yml
-    extra_hosts:
-      ://chatwoot.com: "127.0.0.1"
-      astraonline.com.br: "127.0.0.1"
     environment: *chatwoot-env
     volumes:
       - chatwoot_storage:/app/storage
