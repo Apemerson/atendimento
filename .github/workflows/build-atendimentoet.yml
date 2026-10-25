@@ -42,7 +42,7 @@ jobs:
             --volume "$PWD:/workspace" \
             --workdir /workspace \
             --entrypoint ruby \
-            ghcr.io/apemerson/atendimentoet:v4.18.0-0.0.5 \
+            ghcr.io/apemerson/atendimentoet:v4.19.0-0.0.1 \
             -c app/controllers/kanban/provider_webhooks_controller.rb
 
       - name: Build and push overlay image
@@ -50,4 +50,4 @@ jobs:
         with:
           context: .
           push: ${{ github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main' }}
-          tags: ghcr.io/apemerson/atendimentoet:v4.18.0-0.0.8
+          tags: ghcr.io/apemerson/atendimentoet:v4.19.0-0.0.2
