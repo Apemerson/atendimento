@@ -9,7 +9,7 @@ services:
     environment: &chatwoot-env
       TZ: America/Sao_Paulo
       CHATWOOT_HUB_URL: https://astraonline.com.br
-      INSTALLATION_NAME: atendimentoET
+      INSTALLATION_NAME: ET Connect
       NODE_ENV: production
       RAILS_ENV: production
       INSTALLATION_ENV: docker
