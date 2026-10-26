@@ -6,12 +6,14 @@ on:
     paths:
       - Dockerfile
       - app/controllers/kanban/provider_webhooks_controller.rb
+      - config/initializers/enterprise_features.rb
       - .github/workflows/build-atendimentoet.yml
   push:
     branches: [main]
     paths:
       - Dockerfile
       - app/controllers/kanban/provider_webhooks_controller.rb
+      - config/initializers/enterprise_features.rb
       - .github/workflows/build-atendimentoet.yml
   workflow_dispatch:
 
@@ -43,7 +45,7 @@ jobs:
             --workdir /workspace \
             --entrypoint ruby \
             ghcr.io/apemerson/atendimentoet:v4.19.0-0.0.1 \
-            -c app/controllers/kanban/provider_webhooks_controller.rb
+            -c app/controllers/kanban/provider_webhooks_controller.rb config/initializers/enterprise_features.rb
 
       - name: Build and push overlay image
         uses: docker/build-push-action@v6

@@ -39,6 +39,7 @@ services:
       ENTERPRISE_NUMBER_OF_AGENTS: "9999999"
     volumes:
       - chatwoot_storage:/app/storage
+      - ./config/initializers/enterprise_features.rb:/app/config/initializers/enterprise_features.rb:ro
     networks:
       - default
       - coolify
@@ -64,6 +65,7 @@ services:
     environment: *chatwoot-env
     volumes:
       - chatwoot_storage:/app/storage
+      - ./config/initializers/enterprise_features.rb:/app/config/initializers/enterprise_features.rb:ro
     networks:
       - default
       - coolify
