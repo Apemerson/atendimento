@@ -1,0 +1,2 @@
+{"name":"servicos-ordens","version":"1.0.0","private":true,"type":"module","scripts":{"dev":"vite --host 0.0.0.0","build":"vite build","start":"node server/index.js"},"dependencies":{"@vitejs/plugin-react":"^4.7.0","bcryptjs":"^3.0.2","express":"^5.1.0","jsonwebtoken":"^9.0.2","lucide-react":"^0.468.0","pg":"^8.16.3","react":"^19.1.0","react-dom":"^19.1.0","vite":"^6.3.5"},"devDependencies":{}}
+
